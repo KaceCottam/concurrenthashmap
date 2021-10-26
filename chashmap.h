@@ -250,7 +250,7 @@ std::pair<typename chashmap<Key, T>::iterator, bool> chashmap<Key, T>::insert(co
     // we want to resize our pairs vector when we find that the number of
     // inserted elements is 2/3 of our max capacity
     // (to prevent collisions)
-    const float threshold = 2.0 / 3.0;  // 1/3 of the pockets are empty
+    const float threshold = 3.0 / 4.0;  // 1/4 of the pockets are empty
     const float ratio = (float)inserted_values / (buckets_size + 1);
     if (ratio >= threshold) {
         // we want to resize our pairs vector
