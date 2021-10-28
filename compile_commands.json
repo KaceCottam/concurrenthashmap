@@ -1,20 +1,17 @@
 [
   {
     "arguments": [
-      "/usr/bin/x86_64-linux-gnu-g++-10",
+      "/usr/lib/llvm-12/bin/clang",
       "-c",
       "test.cpp",
       "-o",
       "test",
       "--std=c++20",
-      "-fopenmp",
+      "-g",
       "-Wall",
       "-Wextra",
       "-Werror",
-      "-Wpedantic",
-      "-ffast-math",
-      "-pthread",
-      "-O3"
+      "-Wpedantic"
     ],
     "directory": "/home/kaceac1/Dropbox/dev/cpts411/concurrenthashmap",
     "file": "/home/kaceac1/Dropbox/dev/cpts411/concurrenthashmap/test.cpp",

@@ -1,20 +1,47 @@
 #include <string>
 #include <cassert> // we shall do simple tests with assert
+#include <concepts>
+#include <iterator>
 #include "chashmap.h"
 
 int main() {
   chashmap<std::string, int> hashTable;
-  
-  hashTable.insert("hello, world!", 5);
-  assert(*hashTable.get("hello, world!") == 5);
-  assert(hashTable.get("not in hashtable!") == nullptr);
+  {
+    auto p = hashTable.insert("hello, world!", 5);
+    p.wait();
+  }
+  {
+    auto p = hashTable.get("hello, world!");
+    assert(hashTable["hello, world!"] == 5);
+    p.wait();
+    assert(*p.get() == 5);
+  }
+  {
+    auto p = hashTable.get("not in hashtable!");
+    p.wait();
+    assert(p.get() == nullptr);
+  }
 
   assert(hashTable["hello, world!"] == 5);
 
-  hashTable.insert("hello, world!", 10);
-  assert(*hashTable.get("hello, world!") == 5);
-  hashTable.insert_or_assign("hello, world!", 10);
-  assert(*hashTable.get("hello, world!") == 10);
+  { 
+    auto p = hashTable.insert("hello, world!", 10);
+    p.wait();
+  }
+  {
+    auto p = hashTable.get("hello, world!");
+    p.wait();
+    assert(*p.get() == 5);
+  }
+  {
+    auto p = hashTable.insert_or_assign("hello, world!", 10);
+    p.wait();
+  }
+  {
+    auto p = hashTable.get("hello, world!");
+    p.wait();
+    assert(*p.get() == 10);
+  }
   assert(hashTable["hello, world!"] == 10);
   hashTable["now in hashtable!"] = 399;
   assert(hashTable["now in hashtable!"] == 399);
@@ -38,16 +65,62 @@ int main() {
   hashTable["ncadxxxxxxxxx"] = 0;
 
   // we know "neat" is inside the hashTable
-  assert(hashTable.get("neat") != nullptr);
+  {
+    auto p = hashTable.get("neat");
+    p.wait();
+    assert(p.get() != nullptr);
+  }
   assert(hashTable["neat"] == 403);
 
   // remove "neat" from hashTable
   // marked it for lazy deletion
-  hashTable.erase("neat");
-  assert(hashTable.get("neat") == nullptr);
+  {
+    auto p = hashTable.erase("neat");
+    p.wait();
+  }
+  {
+    auto p = hashTable.get("neat");
+    p.wait();
+    assert(p.get() == nullptr);
+  }
 
   // reinsert "neat"
-  hashTable.insert("neat", 500);
-  assert(hashTable.get("neat") != nullptr);
+  {
+    auto p = hashTable.insert("neat", 500);
+    p.wait();
+  }
+  {
+    auto p = hashTable.get("neat");
+    p.wait();
+    assert(p.get() != nullptr);
+  }
   assert(hashTable["neat"] == 500);
+
+  {
+    auto p1 = hashTable.insert("foo", 100);
+    auto p2 = hashTable.insert("bar", 10000);
+    auto p3 = hashTable.insert("foobar", 10000);
+    p3.wait();
+    assert(hashTable["foobar"] == 10000);
+    p1.wait();
+    p2.wait();
+  }
+  {
+    auto p = hashTable.find("foobar");
+    p.wait();
+    assert(p.get() != hashTable.end());
+  }
+  {
+   const auto& chashTable = hashTable;
+   auto p = chashTable.find("foobar");
+   p.wait();
+   assert(p.get() != hashTable.cend());
+  }
+  {
+    auto p = hashTable.compute("foobar", [](auto value){ return value + 1; });
+    p.wait();
+    auto value = p.get();
+    assert(value.has_value());
+    assert(value.value() == 10001);
+  }
 }
