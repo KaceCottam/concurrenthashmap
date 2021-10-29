@@ -94,8 +94,8 @@ int main() {
     auto p = hashTable.get("neat");
     p.wait();
     assert(p.get() != nullptr);
+    assert(hashTable["neat"] == 500);
   }
-  assert(hashTable["neat"] == 500);
 
   {
     auto p1 = hashTable.insert("foo", 100);

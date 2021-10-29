@@ -39,24 +39,24 @@ public:
         size_type at;
         size_type end;
     public:
-        iterator() = default;
-        iterator(const iterator&) = default;
-        iterator(const iterator&&) = default;
-        explicit iterator(typename std::vector<bucket>::iterator c, const size_type at, const size_type n)
+        constexpr iterator() = default;
+        constexpr iterator(const iterator&) = default;
+        constexpr iterator(iterator&&) = default;
+        constexpr explicit iterator(typename std::vector<bucket>::iterator c, const size_type at, const size_type n)
             : current{c}, begin{0}, at{at}, end{n} {}
-        auto operator<=>(const iterator&) const = default;
-        bool operator==(const iterator&) const;
-        value_type& operator*();
-        value_type* operator->();
-        value_type& operator[](const difference_type);
-        iterator& operator++();
-        iterator operator++(int);
-        iterator& operator+=(const difference_type);
-        iterator operator+(const difference_type) const;
-        iterator& operator--();
-        iterator operator--(int);
-        iterator& operator-=(const difference_type);
-        iterator operator-(const difference_type) const;
+        constexpr auto operator<=>(const iterator&) const = default;
+        constexpr bool operator==(const iterator&) const;
+        constexpr value_type& operator*();
+        constexpr value_type* operator->();
+        constexpr value_type& operator[](const difference_type);
+        constexpr iterator& operator++();
+        constexpr iterator operator++(int);
+        constexpr iterator& operator+=(const difference_type);
+        constexpr iterator operator+(const difference_type) const;
+        constexpr iterator& operator--();
+        constexpr iterator operator--(int);
+        constexpr iterator& operator-=(const difference_type);
+        constexpr iterator operator-(const difference_type) const;
     };
 
     class const_iterator {
@@ -67,51 +67,51 @@ public:
         size_type at;
         size_type end;
     public:
-        const_iterator() = default;
-        const_iterator(const const_iterator&) = default;
-        const_iterator(const const_iterator&&) = default;
-        explicit const_iterator(typename std::vector<bucket>::const_iterator c, const size_type at, const size_type n)
+        constexpr const_iterator() = default;
+        constexpr const_iterator(const const_iterator&) = default;
+        constexpr const_iterator(const_iterator&&) = default;
+        constexpr explicit const_iterator(typename std::vector<bucket>::const_iterator c, const size_type at, const size_type n)
             : current{c}, at{at}, end{n} {}
-        auto operator<=>(const const_iterator&) const = default;
-        bool operator==(const const_iterator&) const;
-        const value_type& operator*();
-        const value_type* operator->();
-        const value_type& operator[](difference_type);
-        const_iterator& operator++();
-        const_iterator operator++(int);
-        const_iterator operator+(const difference_type) const;
-        const_iterator& operator+=(difference_type);
-        const_iterator& operator--();
-        const_iterator operator--(int);
-        const_iterator& operator-=(difference_type);
-        const_iterator operator-(const difference_type) const;
+        constexpr auto operator<=>(const const_iterator&) const = default;
+        constexpr bool operator==(const const_iterator&) const;
+        constexpr const value_type& operator*();
+        constexpr const value_type* operator->();
+        constexpr const value_type& operator[](difference_type);
+        constexpr const_iterator& operator++();
+        constexpr const_iterator operator++(int);
+        constexpr const_iterator operator+(const difference_type) const;
+        constexpr const_iterator& operator+=(difference_type);
+        constexpr const_iterator& operator--();
+        constexpr const_iterator operator--(int);
+        constexpr const_iterator& operator-=(difference_type);
+        constexpr const_iterator operator-(const difference_type) const;
     };
 
-    chashmap(const size_type initial_capacity = 16);
-    chashmap(const chashmap<Key, T>& copy);
-    chashmap(chashmap<Key, T>&& move);
-    iterator begin();
-    const_iterator begin() const;
-    const_iterator cbegin() const;
-    iterator end();
-    const_iterator end() const;
-    const_iterator cend() const;
+    constexpr chashmap(const size_type initial_capacity = 16);
+    constexpr chashmap(const chashmap<Key, T>& copy);
+    constexpr chashmap(chashmap<Key, T>&& move);
+    constexpr iterator begin();
+    constexpr const_iterator begin() const;
+    constexpr const_iterator cbegin() const;
+    constexpr iterator end();
+    constexpr const_iterator end() const;
+    constexpr const_iterator cend() const;
     std::future<bool> empty() const;
     std::future<size_type> size() const;
-    size_type max_size() const;
+    constexpr size_type max_size() const;
     std::future<void> clear();
     std::future<std::pair<iterator, bool>> insert(Key key, T value);
     std::future<std::pair<iterator, bool>> insert(value_type value);
     std::future<void> insert(std::initializer_list<value_type> values);
     std::future<std::pair<iterator, bool>> insert_or_assign(Key key, T value);
-    void erase(iterator pos);
+    constexpr void erase(iterator pos);
     std::future<size_type> erase(Key key);
     std::future<size_type> count(Key key) const;
     std::future<iterator> find(Key key);
     std::future<const_iterator> find(Key key) const;
     std::future<bool> contains(Key key) const;
     std::future<T*> get(Key key);
-    T& operator[](const Key& key);
+    constexpr T& operator[](const Key& key);
     std::future<size_type> erase_if(std::predicate<const Key&, const T&> auto fn);
     std::future<size_type> erase_if(std::predicate<const Key&> auto fn);
     std::future<size_type> count_if(std::predicate<const Key&, const T&> auto fn) const;
@@ -124,12 +124,14 @@ public:
     std::future<bool> contains(std::predicate<const T&> auto fn) const;
     std::future<std::optional<T>> compute(Key key, std::invocable<const Key&, const T&> auto fn) const;
     std::future<std::optional<T>> compute(Key key, std::invocable<const T&> auto fn) const;
+    constexpr chashmap<Key, T>& operator=(const chashmap<Key, T>& copy) = default;
+    constexpr chashmap<Key, T>& operator=(chashmap<Key, T>&& move) = default;
 private:
     std::future<std::pair<iterator, bool>> create(Key key, T value);
 };
 
 template<Hashable Key, class T>
-chashmap<Key, T>::chashmap(const typename chashmap<Key, T>::size_type initial_capacity)
+constexpr chashmap<Key, T>::chashmap(const typename chashmap<Key, T>::size_type initial_capacity)
 : buckets{initial_capacity}
 {
     if (initial_capacity <= 0) {
@@ -138,44 +140,44 @@ chashmap<Key, T>::chashmap(const typename chashmap<Key, T>::size_type initial_ca
 }
 
 template<Hashable Key, class T>
-chashmap<Key, T>::chashmap(const chashmap<Key, T>& copy)
+constexpr chashmap<Key, T>::chashmap(const chashmap<Key, T>& copy)
 : buckets{copy.buckets}
 {
 }
 
 template<Hashable Key, class T>
-chashmap<Key, T>::chashmap(chashmap<Key, T>&& copy)
+constexpr chashmap<Key, T>::chashmap(chashmap<Key, T>&& copy)
 : buckets{std::move(copy.buckets)}
 {
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator chashmap<Key, T>::begin() {
+constexpr typename chashmap<Key, T>::iterator chashmap<Key, T>::begin() {
     return iterator(buckets.begin(), 0, buckets.size());
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator chashmap<Key, T>::begin() const {
+constexpr typename chashmap<Key, T>::const_iterator chashmap<Key, T>::begin() const {
     return cbegin();
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator chashmap<Key, T>::cbegin() const {
+constexpr typename chashmap<Key, T>::const_iterator chashmap<Key, T>::cbegin() const {
     return const_iterator(buckets.cbegin(), 0, buckets.size());
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator chashmap<Key, T>::end() {
+constexpr typename chashmap<Key, T>::iterator chashmap<Key, T>::end() {
     return iterator(buckets.end(), 0, buckets.size());
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator chashmap<Key, T>::end() const {
+constexpr typename chashmap<Key, T>::const_iterator chashmap<Key, T>::end() const {
     return cend();
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator chashmap<Key, T>::cend() const {
+constexpr typename chashmap<Key, T>::const_iterator chashmap<Key, T>::cend() const {
     return const_iterator(buckets.cend(), 0, buckets.size());
 }
 
@@ -201,7 +203,7 @@ std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::size() const
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::size_type chashmap<Key, T>::max_size() const {
+constexpr typename chashmap<Key, T>::size_type chashmap<Key, T>::max_size() const {
     return std::numeric_limits<size_type>::max();
 }
 
@@ -308,7 +310,7 @@ std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, 
 }
 
 template<Hashable Key, class T>
-void chashmap<Key, T>::erase(typename chashmap<Key, T>::iterator pos)
+constexpr void chashmap<Key, T>::erase(typename chashmap<Key, T>::iterator pos)
 {
     (**pos.current).first = true;
 }
@@ -370,7 +372,7 @@ std::future<T*> chashmap<Key, T>::get(Key key) {
 }
 
 template<Hashable Key, class T>
-T& chashmap<Key, T>::operator[](const Key& key) {
+constexpr T& chashmap<Key, T>::operator[](const Key& key) {
     // it will return the reference to the key's
     // value if it exists,
     // if it does not exist, it will create a
@@ -503,30 +505,30 @@ std::future<std::optional<T>> chashmap<Key, T>::compute(Key key, std::invocable<
 }
 
 template<Hashable Key, class T>
-bool chashmap<Key, T>::iterator::operator==(const typename chashmap<Key, T>::iterator& it) const {
+constexpr bool chashmap<Key, T>::iterator::operator==(const typename chashmap<Key, T>::iterator& it) const {
     return current == it.current;
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::value_type& chashmap<Key, T>::iterator::operator*()
+constexpr typename chashmap<Key, T>::value_type& chashmap<Key, T>::iterator::operator*()
 {
     return (*current)->second;
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::value_type* chashmap<Key, T>::iterator::operator->()
+constexpr typename chashmap<Key, T>::value_type* chashmap<Key, T>::iterator::operator->()
 {
     return &(*current)->second;
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::value_type& chashmap<Key, T>::iterator::operator[](difference_type index)
+constexpr typename chashmap<Key, T>::value_type& chashmap<Key, T>::iterator::operator[](difference_type index)
 {
     return current[index];
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator++()
+constexpr typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator++()
 {
     if (at == end) return *this;
     do { ++current; ++at; } while (at != end && (*current == nullptr || (*current)->first == true));
@@ -534,7 +536,7 @@ typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator++()
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator++(int)
+constexpr typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator++(int)
 {
     auto res = *this;
     ++*this;
@@ -542,7 +544,7 @@ typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator++(int)
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator+=(const difference_type n)
+constexpr typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator+=(const difference_type n)
 {
     if (n < 0) return (*this -= -n);
     for (difference_type i = 0; i < n; ++i) {
@@ -552,7 +554,7 @@ typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator+=(cons
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator+(const difference_type n) const
+constexpr typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator+(const difference_type n) const
 {
     auto res = *this;
     res += n;
@@ -560,7 +562,7 @@ typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator+(const 
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator--()
+constexpr typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator--()
 {
     if (at == begin) return *this;
     do { --current; --at; } while (at != begin && (*current == nullptr || (*current)->first == true));
@@ -568,7 +570,7 @@ typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator--()
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator--(int)
+constexpr typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator--(int)
 {
     auto res = *this;
     --*this;
@@ -576,7 +578,7 @@ typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator--(int)
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator-=(const difference_type n)
+constexpr typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator-=(const difference_type n)
 {
     if (n < 0) return (*this += -n);
     for (difference_type i = 0; i < n; ++i) {
@@ -586,7 +588,7 @@ typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator-=(cons
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator-(const difference_type n) const
+constexpr typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator-(const difference_type n) const
 {
     auto res = *this;
     res += n;
@@ -594,30 +596,30 @@ typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator-(const 
 }
 
 template<Hashable Key, class T>
-bool chashmap<Key, T>::const_iterator::operator==(const typename chashmap<Key, T>::const_iterator& it) const {
+constexpr bool chashmap<Key, T>::const_iterator::operator==(const typename chashmap<Key, T>::const_iterator& it) const {
     return current == it.current;
 }
 
 template<Hashable Key, class T>
-const typename chashmap<Key, T>::value_type& chashmap<Key, T>::const_iterator::operator*()
+constexpr const typename chashmap<Key, T>::value_type& chashmap<Key, T>::const_iterator::operator*()
 {
     return (*current)->second;
 }
 
 template<Hashable Key, class T>
-const typename chashmap<Key, T>::value_type* chashmap<Key, T>::const_iterator::operator->()
+constexpr const typename chashmap<Key, T>::value_type* chashmap<Key, T>::const_iterator::operator->()
 {
     return &(*current)->second;
 }
 
 template<Hashable Key, class T>
-const typename chashmap<Key, T>::value_type& chashmap<Key, T>::const_iterator::operator[](difference_type index)
+constexpr const typename chashmap<Key, T>::value_type& chashmap<Key, T>::const_iterator::operator[](difference_type index)
 {
     return current[index];
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator++()
+constexpr typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator++()
 {
     if (at == end) return *this;
     do { ++current; ++at; } while (at != end && (*current == nullptr || (*current)->first == true));
@@ -625,7 +627,7 @@ typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::ope
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::operator++(int)
+constexpr typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::operator++(int)
 {
     auto res = *this;
     ++*this;
@@ -633,7 +635,7 @@ typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::oper
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator+=(const difference_type n)
+constexpr typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator+=(const difference_type n)
 {
     if (n < 0) return (*this -= -n);
     for (difference_type i = 0; i < n; ++i) {
@@ -643,7 +645,7 @@ typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::ope
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::operator+(const difference_type n) const
+constexpr typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::operator+(const difference_type n) const
 {
     auto res = *this;
     res += n;
@@ -651,7 +653,7 @@ typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::oper
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator--()
+constexpr typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator--()
 {
     if (at == begin) return *this;
     do { --current; --at; } while (at != begin && (*current == nullptr || (*current)->first == true));
@@ -659,7 +661,7 @@ typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::ope
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::operator--(int)
+constexpr typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::operator--(int)
 {
     auto res = *this;
     --*this;
@@ -667,7 +669,7 @@ typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::oper
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator-=(const difference_type n)
+constexpr typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator-=(const difference_type n)
 {
     if (n < 0) return (*this += -n);
     for (difference_type i = 0; i < n; ++i) {
@@ -677,7 +679,7 @@ typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::ope
 }
 
 template<Hashable Key, class T>
-typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::operator-(const difference_type n) const
+constexpr typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::operator-(const difference_type n) const
 {
     auto res = *this;
     res += n;
