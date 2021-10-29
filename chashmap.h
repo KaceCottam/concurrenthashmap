@@ -35,13 +35,15 @@ public:
     private:
         friend class chashmap;
         typename std::vector<bucket>::iterator current;
-        size_type size;
+        size_type begin;
+        size_type at;
+        size_type end;
     public:
         iterator() = default;
         iterator(const iterator&) = default;
         iterator(const iterator&&) = default;
-        explicit iterator(typename std::vector<bucket>::iterator c, const size_type n)
-            : current{c}, size{n} {}
+        explicit iterator(typename std::vector<bucket>::iterator c, const size_type at, const size_type n)
+            : current{c}, begin{0}, at{at}, end{n} {}
         auto operator<=>(const iterator&) const = default;
         bool operator==(const iterator&) const;
         value_type& operator*();
@@ -61,13 +63,15 @@ public:
     private:
         friend class chashmap;
         typename std::vector<bucket>::const_iterator current;
-        size_type size;
+        size_type begin;
+        size_type at;
+        size_type end;
     public:
         const_iterator() = default;
         const_iterator(const const_iterator&) = default;
         const_iterator(const const_iterator&&) = default;
-        explicit const_iterator(typename std::vector<bucket>::const_iterator c, const size_type n)
-            : current{c}, size{n} {}
+        explicit const_iterator(typename std::vector<bucket>::const_iterator c, const size_type at, const size_type n)
+            : current{c}, at{at}, end{n} {}
         auto operator<=>(const const_iterator&) const = default;
         bool operator==(const const_iterator&) const;
         const value_type& operator*();
@@ -96,32 +100,32 @@ public:
     std::future<size_type> size() const;
     size_type max_size() const;
     std::future<void> clear();
-    std::future<std::pair<iterator, bool>> insert(const Key& key, const T& value);
-    std::future<std::pair<iterator, bool>> insert(const value_type value);
+    std::future<std::pair<iterator, bool>> insert(Key key, T value);
+    std::future<std::pair<iterator, bool>> insert(value_type value);
     std::future<void> insert(std::initializer_list<value_type> values);
-    std::future<std::pair<iterator, bool>> insert_or_assign(const Key& key, const T& value);
+    std::future<std::pair<iterator, bool>> insert_or_assign(Key key, T value);
     void erase(iterator pos);
-    std::future<size_type> erase(const Key& key);
-    std::future<size_type> count(const Key& key);
-    std::future<iterator> find(const Key& key);
-    std::future<const_iterator> find(const Key& key) const;
-    std::future<bool> contains(const Key& key) const;
-    std::future<T*> get(const Key& key);
+    std::future<size_type> erase(Key key);
+    std::future<size_type> count(Key key) const;
+    std::future<iterator> find(Key key);
+    std::future<const_iterator> find(Key key) const;
+    std::future<bool> contains(Key key) const;
+    std::future<T*> get(Key key);
     T& operator[](const Key& key);
-    std::future<size_type> erase_if(std::predicate<Key, T> auto fn);
-    std::future<size_type> erase_if(std::predicate<Key> auto fn);
-    std::future<size_type> count_if(std::predicate<Key, T> auto fn);
-    std::future<size_type> count_if(std::predicate<Key> auto fn);
-    std::future<iterator> find_if(std::predicate<Key, T> auto fn) const;
-    std::future<iterator> find_if(std::predicate<Key> auto fn) const;
-    std::future<const_iterator> find_if(std::predicate<Key, T> auto fn) const;
-    std::future<const_iterator> find_if(std::predicate<Key> auto fn) const;
-    std::future<bool> contains(std::predicate<Key, T> auto fn) const;
-    std::future<bool> contains(std::predicate<T> auto fn) const;
-    std::future<std::optional<T>> compute(const Key& key, std::invocable<Key, T> auto fn) const;
-    std::future<std::optional<T>> compute(const Key& key, std::invocable<T> auto fn) const;
+    std::future<size_type> erase_if(std::predicate<const Key&, const T&> auto fn);
+    std::future<size_type> erase_if(std::predicate<const Key&> auto fn);
+    std::future<size_type> count_if(std::predicate<const Key&, const T&> auto fn) const;
+    std::future<size_type> count_if(std::predicate<const Key&> auto fn) const;
+    std::future<iterator> find_if(std::predicate<const Key&, const T&> auto fn);
+    std::future<iterator> find_if(std::predicate<const Key&> auto fn);
+    std::future<const_iterator> find_if(std::predicate<const Key&, const T&> auto fn) const;
+    std::future<const_iterator> find_if(std::predicate<const Key&> auto fn) const;
+    std::future<bool> contains(std::predicate<const Key&, const T&> auto fn) const;
+    std::future<bool> contains(std::predicate<const T&> auto fn) const;
+    std::future<std::optional<T>> compute(Key key, std::invocable<const Key&, const T&> auto fn) const;
+    std::future<std::optional<T>> compute(Key key, std::invocable<const T&> auto fn) const;
 private:
-    std::future<std::pair<iterator, bool>> create(const Key& key, const T& value);
+    std::future<std::pair<iterator, bool>> create(Key key, T value);
 };
 
 template<Hashable Key, class T>
@@ -147,7 +151,7 @@ chashmap<Key, T>::chashmap(chashmap<Key, T>&& copy)
 
 template<Hashable Key, class T>
 typename chashmap<Key, T>::iterator chashmap<Key, T>::begin() {
-    return iterator(buckets.begin(), buckets.size());
+    return iterator(buckets.begin(), 0, buckets.size());
 }
 
 template<Hashable Key, class T>
@@ -157,12 +161,12 @@ typename chashmap<Key, T>::const_iterator chashmap<Key, T>::begin() const {
 
 template<Hashable Key, class T>
 typename chashmap<Key, T>::const_iterator chashmap<Key, T>::cbegin() const {
-    return const_iterator(buckets.cbegin(), buckets.size());
+    return const_iterator(buckets.cbegin(), 0, buckets.size());
 }
 
 template<Hashable Key, class T>
 typename chashmap<Key, T>::iterator chashmap<Key, T>::end() {
-    return iterator(buckets.end(), buckets.size());
+    return iterator(buckets.end(), 0, buckets.size());
 }
 
 template<Hashable Key, class T>
@@ -172,7 +176,7 @@ typename chashmap<Key, T>::const_iterator chashmap<Key, T>::end() const {
 
 template<Hashable Key, class T>
 typename chashmap<Key, T>::const_iterator chashmap<Key, T>::cend() const {
-    return const_iterator(buckets.cend(), buckets.size());
+    return const_iterator(buckets.cend(), 0, buckets.size());
 }
 
 template<Hashable Key, class T>
@@ -209,9 +213,9 @@ std::future<void> chashmap<Key, T>::clear() {
 }
 
 template<Hashable Key, class T>
-std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, T>::create(const Key& key, const T& value)
+std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, T>::create(Key key, T value)
 {
-    return std::async(std::launch::async, [&]{
+    return std::async(std::launch::async, [&, key=std::move(key), value=std::move(value)]{
         int buckets_size = buckets.size();
         size_type hash = std::hash<Key>()(key);
         for (size_type i = 0; /*infinite loop*/; i++) {
@@ -221,7 +225,7 @@ std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, 
                 // create a new thing
                 buckets[idx] = std::make_shared<bucket_content>( false, std::make_pair( key, value ) );
                 ++inserted_values;
-                return std::make_pair( iterator(buckets.begin() + idx, buckets.size()), true );
+                return std::make_pair( iterator(buckets.begin() + idx, idx, buckets.size()), true );
             }
             auto [ is_removed, kvp ] = *buckets[idx];
             auto [ tkey, tvalue ] = kvp;
@@ -229,11 +233,11 @@ std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, 
                 // if marked for lazy deletion
                 buckets[idx] = std::make_shared<bucket_content>( false, std::make_pair( key, value ) );
                 ++inserted_values;
-                return std::make_pair( iterator(buckets.begin() + idx, buckets.size()), true );
+                return std::make_pair( iterator(buckets.begin() + idx, idx, buckets.size()), true );
             } else if (tkey == key) {
                 // if key is already represented
                 // no insertion, and no need to resize
-                return std::make_pair( iterator(buckets.begin() + idx, buckets.size()), false );
+                return std::make_pair( iterator(buckets.begin() + idx, idx, buckets.size()), false );
             }
             // continue in our linear probing
         }
@@ -242,8 +246,8 @@ std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, 
 
 
 template<Hashable Key, class T>
-std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, T>::insert(const Key& key, const T& value) {
-    return std::async(std::launch::async, [&]{
+std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, T>::insert(Key key, T value) {
+    return std::async(std::launch::async, [&, key=std::move(key), value=std::move(value)]{
         int buckets_size = buckets.size();
         // we want to resize our pairs vector when we find that the number of
         // inserted elements is 2/3 of our max capacity
@@ -280,7 +284,7 @@ std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, 
 template<Hashable Key, class T>
 std::future<void> chashmap<Key, T>::insert(std::initializer_list<typename chashmap<Key, T>::value_type> values)
 {
-    return std::async(std::launch::async, [&]{
+    return std::async(std::launch::async, [&, values=std::move(values)]{
         std::vector<std::future<std::pair<iterator, bool>>> pool;
         for (auto [key, value] : values) {
             pool.emplace_back(insert(key, value));
@@ -292,9 +296,9 @@ std::future<void> chashmap<Key, T>::insert(std::initializer_list<typename chashm
 }
 
 template<Hashable Key, class T>
-std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, T>::insert_or_assign(const Key& key, const T& value)
+std::future<std::pair<typename chashmap<Key, T>::iterator, bool>> chashmap<Key, T>::insert_or_assign(Key key, T value)
 {
-    return std::async(std::launch::async, [&]{
+    return std::async(std::launch::async, [&, key=std::move(key), value=std::move(value)]{
         auto promise = insert(key, value);
         promise.wait();
         auto [ iter, inserted ] = promise.get();
@@ -310,68 +314,38 @@ void chashmap<Key, T>::erase(typename chashmap<Key, T>::iterator pos)
 }
 
 template<Hashable Key, class T>
-std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::erase(const Key& key)
+std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::erase(Key key)
 {
-    return std::async(std::launch::async, [&]{
-        auto promise = find(key);
-        promise.wait();
-        auto iter = promise.get();
-        if (iter != end()) {
-            erase(iter);
-            return size_type{1};
-        }
-        return size_type{0};
-    });
+    return erase_if([&, key=std::move(key)](const auto& tkey) { return tkey == key; });
 }
 
 template<Hashable Key, class T>
-std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::count(const Key& key)
+std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::count(Key key) const
 {
-    return std::async(std::launch::async, [&]{
-        auto promise = find(key);
-        promise.wait();
-        auto iter = promise.get();
-        return size_type{iter == end() ? 0 : 1};
-    });
+    return count_if([&, key=std::move(key)](const auto& tkey) { return tkey == key; });
 }
 
 template<Hashable Key, class T>
-std::future<typename chashmap<Key, T>::iterator> chashmap<Key, T>::find(const Key& key)
+std::future<typename chashmap<Key, T>::iterator> chashmap<Key, T>::find(Key key)
 {
-    return std::async(std::launch::async, [&]{
-        for (auto iter = begin(); iter != end(); ++iter) {
-            auto [tkey, _] = *iter;
-            if (tkey == key) return iter;
-        }
-        return end();
-    });
+    return find_if([&, key=std::move(key)](const auto& tkey) { return tkey == key; });
 }
 
 template<Hashable Key, class T>
-std::future<typename chashmap<Key, T>::const_iterator> chashmap<Key, T>::find(const Key& key) const
+std::future<typename chashmap<Key, T>::const_iterator> chashmap<Key, T>::find(Key key) const
 {
-    return std::async(std::launch::async, [&]{
-        for (auto iter = cbegin(); iter != cend(); ++iter) {
-            auto [tkey, _] = *iter;
-            if (tkey == key) return iter;
-        }
-        return cend();
-    });
+    return find_if([&, key=std::move(key)](const auto& tkey) { return tkey == key; });
 }
 
 template<Hashable Key, class T>
-std::future<bool> chashmap<Key, T>::contains(const Key& key) const
+std::future<bool> chashmap<Key, T>::contains(Key key) const
 {
-    return std::async(std::launch::async, [&]{
-        auto future = count(key);
-        future.wait();
-        return future.get() == 1;
-    });
+    return contains_if([&, key=std::move(key)](const auto& tkey) { return tkey == key; });
 }
 
 template<Hashable Key, class T>
-std::future<T*> chashmap<Key, T>::get(const Key& key) {
-    return std::async(std::launch::async, [&]{
+std::future<T*> chashmap<Key, T>::get(Key key) {
+    return std::async(std::launch::async, [&, key=std::move(key)]{
         int buckets_size = buckets.size();
         size_type hash = std::hash<Key>()(key);
         std::pair<iterator, bool> result;
@@ -416,8 +390,103 @@ T& chashmap<Key, T>::operator[](const Key& key) {
 }
 
 template<Hashable Key, class T>
-std::future<std::optional<T>> chashmap<Key, T>::compute(const Key& key, std::invocable<Key, T> auto fn) const {
-    return std::async(std::launch::async, [&]{
+std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::erase_if(std::predicate<const Key&, const T&> auto fn)
+{
+    return std::async(std::launch::async, [&, fn=std::move(fn)]{
+        size_type count = 0;
+        for (auto iter = begin(); iter != end(); iter++) {
+            if (fn(iter->first, iter->second)) {
+                (*iter.current)->first = true;
+                count++;
+            }
+        }
+        return count;
+    });
+}
+
+template<Hashable Key, class T>
+std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::erase_if(std::predicate<const Key&> auto fn)
+{
+    return erase_if([&, fn=std::move(fn)](Key k, T) { return fn(k); });
+}
+
+template<Hashable Key, class T>
+std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::count_if(std::predicate<const Key&, const T&> auto fn) const
+{
+    return std::async(std::launch::async, [&, fn=std::move(fn)]{
+        size_type count = 0;
+        for (auto iter = cbegin(); iter != cend(); iter++) {
+            if (fn(iter->first, iter->second)) {
+                count++;
+            }
+        }
+        return count;
+    });
+}
+
+template<Hashable Key, class T>
+std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::count_if(std::predicate<const Key&> auto fn) const
+{
+    return count_if([&, fn=std::move(fn)](Key k, T) { return fn(k); });
+}
+
+template<Hashable Key, class T>
+std::future<typename chashmap<Key, T>::iterator> chashmap<Key, T>::find_if(std::predicate<const Key&, const T&> auto fn)
+{
+    return std::async(std::launch::async, [&, fn=std::move(fn)]{
+        for (auto iter = begin(); iter != end(); iter++) {
+            if (fn(iter->first, iter->second)) {
+                return iter;
+            }
+        }
+        return end();
+    });
+}
+
+template<Hashable Key, class T>
+std::future<typename chashmap<Key, T>::iterator> chashmap<Key, T>::find_if(std::predicate<const Key&> auto fn)
+{
+    return find_if([&, fn=std::move(fn)](Key k, T) { return fn(k); });
+}
+
+template<Hashable Key, class T>
+std::future<typename chashmap<Key, T>::const_iterator> chashmap<Key, T>::find_if(std::predicate<const Key&, const T&> auto fn) const
+{
+    return std::async(std::launch::async, [&, fn=std::move(fn)]{
+        for (auto iter = cbegin(); iter != cend(); iter++) {
+            if (fn(iter->first, iter->second)) {
+                return iter;
+            }
+        }
+        return cend();
+    });
+}
+
+template<Hashable Key, class T>
+std::future<typename chashmap<Key, T>::const_iterator> chashmap<Key, T>::find_if(std::predicate<const Key&> auto fn) const
+{
+    return find_if([&, fn=std::move(fn)](Key k, T) { return fn(k); });
+}
+
+template<Hashable Key, class T>
+std::future<bool> chashmap<Key, T>::contains(std::predicate<const Key&, const T&> auto fn) const
+{
+    return std::async(std::launch::async, [&, fn=std::move(fn)]{
+        auto p = find_if(fn);
+        p.wait();
+        return p.get() != cend();
+    });
+}
+
+template<Hashable Key, class T>
+std::future<bool> chashmap<Key, T>::contains(std::predicate<const T&> auto fn) const
+{
+    return contains([&, fn=std::move(fn)](Key, T k) { return fn(k); });
+}
+
+template<Hashable Key, class T>
+std::future<std::optional<T>> chashmap<Key, T>::compute(Key key, std::invocable<const Key&, const T&> auto fn) const {
+    return std::async(std::launch::async, [&, key=std::move(key), fn=std::move(fn)]{
         auto p = find(key);
         p.wait();
         const_iterator valptr = p.get();
@@ -429,8 +498,8 @@ std::future<std::optional<T>> chashmap<Key, T>::compute(const Key& key, std::inv
 
 
 template<Hashable Key, class T>
-std::future<std::optional<T>> chashmap<Key, T>::compute(const Key& key, std::invocable<T> auto fn) const {
-    return compute(key, [&](Key, T t) { return fn(t); });
+std::future<std::optional<T>> chashmap<Key, T>::compute(Key key, std::invocable<const T&> auto fn) const {
+    return compute(key, [&, key=std::move(key), fn=std::move(fn)](Key, T t) { return fn(t); });
 }
 
 template<Hashable Key, class T>
@@ -459,7 +528,8 @@ typename chashmap<Key, T>::value_type& chashmap<Key, T>::iterator::operator[](di
 template<Hashable Key, class T>
 typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator++()
 {
-    do { ++current; } while (*current == nullptr || (*current)->first == true);
+    if (at == end) return *this;
+    do { ++current; ++at; } while (at != end && (*current == nullptr || (*current)->first == true));
     return *this;
 }
 
@@ -492,7 +562,8 @@ typename chashmap<Key, T>::iterator chashmap<Key, T>::iterator::operator+(const 
 template<Hashable Key, class T>
 typename chashmap<Key, T>::iterator& chashmap<Key, T>::iterator::operator--()
 {
-    do { --current; } while (*current == nullptr || (*current)->first == true);
+    if (at == begin) return *this;
+    do { --current; --at; } while (at != begin && (*current == nullptr || (*current)->first == true));
     return *this;
 }
 
@@ -548,7 +619,8 @@ const typename chashmap<Key, T>::value_type& chashmap<Key, T>::const_iterator::o
 template<Hashable Key, class T>
 typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator++()
 {
-    do { ++current; } while (*current == nullptr || (*current)->first == true);
+    if (at == end) return *this;
+    do { ++current; ++at; } while (at != end && (*current == nullptr || (*current)->first == true));
     return *this;
 }
 
@@ -581,7 +653,8 @@ typename chashmap<Key, T>::const_iterator chashmap<Key, T>::const_iterator::oper
 template<Hashable Key, class T>
 typename chashmap<Key, T>::const_iterator& chashmap<Key, T>::const_iterator::operator--()
 {
-    do { --current; } while (*current == nullptr || (*current)->first == true);
+    if (at == begin) return *this;
+    do { --current; --at; } while (at != begin && (*current == nullptr || (*current)->first == true));
     return *this;
 }
 

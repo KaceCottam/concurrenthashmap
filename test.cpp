@@ -77,6 +77,7 @@ int main() {
   {
     auto p = hashTable.erase("neat");
     p.wait();
+    assert(p.get() == 1);
   }
   {
     auto p = hashTable.get("neat");
