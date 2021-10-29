@@ -501,7 +501,7 @@ std::future<std::optional<T>> chashmap<Key, T>::compute(Key key, std::invocable<
 
 template<Hashable Key, class T>
 std::future<std::optional<T>> chashmap<Key, T>::compute(Key key, std::invocable<const T&> auto fn) const {
-    return compute(key, [&, key=std::move(key), fn=std::move(fn)](Key, T t) { return fn(t); });
+    return compute(key, [&, key=key, fn=std::move(fn)](Key, T t) { return fn(t); });
 }
 
 template<Hashable Key, class T>
