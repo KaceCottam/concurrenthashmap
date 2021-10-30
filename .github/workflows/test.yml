@@ -3,9 +3,11 @@ on: [push]
 jobs:
   unit-test:
     runs-on: ubuntu-latest
+    env:
+      CXX: g++-10
     steps:
       - uses: actions/checkout@v2
       - name: build
-        run: CXX=g++-10 make
+        run: make
       - name: test
         run: ./test
