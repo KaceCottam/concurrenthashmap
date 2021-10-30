@@ -3,8 +3,8 @@ on: [push]
 jobs:
   unit-test:
     runs-on: ubuntu-latest
-    - uses: actions/checkout@v2
-    - name: build
-      run: CXX=g++-10 make
-    - name: test
-      run: ./test
+      - uses: actions/checkout@v2
+      - name: build
+        run: CXX=g++-10 make
+      - name: test
+        run: ./test
