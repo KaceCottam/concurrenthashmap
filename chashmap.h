@@ -29,7 +29,7 @@ private:
     using bucket_content = std::pair<bool, value_type>;
     using bucket = std::shared_ptr<bucket_content>;
     std::vector<bucket> buckets;
-    int inserted_values = 0;
+    size_type inserted_values = 0;
 public:
     class iterator {
     private:
@@ -43,7 +43,7 @@ public:
         constexpr iterator(const iterator&) = default;
         constexpr iterator(iterator&&) = default;
         constexpr explicit iterator(typename std::vector<bucket>::iterator c, const size_type at, const size_type n)
-            : current{c}, begin{0}, at{at}, end{n} {}
+            : current{c}, begin{0}, at{at}, end{n} { if (*c == nullptr) ++*this; }
         constexpr auto operator<=>(const iterator&) const = default;
         constexpr bool operator==(const iterator&) const;
         constexpr value_type& operator*();
@@ -71,7 +71,7 @@ public:
         constexpr const_iterator(const const_iterator&) = default;
         constexpr const_iterator(const_iterator&&) = default;
         constexpr explicit const_iterator(typename std::vector<bucket>::const_iterator c, const size_type at, const size_type n)
-            : current{c}, at{at}, end{n} {}
+            : current{c}, begin{0}, at{at}, end{n} { if (*c == nullptr) ++*this; }
         constexpr auto operator<=>(const const_iterator&) const = default;
         constexpr bool operator==(const const_iterator&) const;
         constexpr const value_type& operator*();
@@ -97,9 +97,9 @@ public:
     constexpr const_iterator end() const;
     constexpr const_iterator cend() const;
     std::future<bool> empty() const;
-    std::future<size_type> size() const;
+    constexpr size_type size() const;
     constexpr size_type max_size() const;
-    std::future<void> clear();
+    constexpr void clear();
     std::future<std::pair<iterator, bool>> insert(Key key, T value);
     std::future<std::pair<iterator, bool>> insert(value_type value);
     std::future<void> insert(std::initializer_list<value_type> values);
@@ -124,6 +124,7 @@ public:
     std::future<bool> contains(std::predicate<const T&> auto fn) const;
     std::future<std::optional<T>> compute(Key key, std::invocable<const Key&, const T&> auto fn) const;
     std::future<std::optional<T>> compute(Key key, std::invocable<const T&> auto fn) const;
+    std::future<T&> merge(Key key, T value, std::invocable<const T&, const T&> auto fn );
     constexpr chashmap<Key, T>& operator=(const chashmap<Key, T>& copy) = default;
     constexpr chashmap<Key, T>& operator=(chashmap<Key, T>&& move) = default;
 private:
@@ -185,21 +186,15 @@ template<Hashable Key, class T>
 std::future<bool> chashmap<Key, T>::empty() const {
     return std::async(std::launch::async, [&]{
         for (bucket value : buckets) {
-            if (value && value->first) return true;
+            if (value && value->first) return false;
         }
-        return false;
+        return true;
     });
 }
 
 template<Hashable Key, class T>
-std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::size() const {
-    return std::async(std::launch::async, [&]{
-        int sum = 0;
-        for (bucket value : buckets) {
-            if (value && value->first) ++sum;
-        }
-        return sum;
-    });
+constexpr typename chashmap<Key, T>::size_type chashmap<Key, T>::size() const {
+    return inserted_values;
 }
 
 template<Hashable Key, class T>
@@ -208,10 +203,11 @@ constexpr typename chashmap<Key, T>::size_type chashmap<Key, T>::max_size() cons
 }
 
 template<Hashable Key, class T>
-std::future<void> chashmap<Key, T>::clear() {
-    auto future = buckets.clear();
+constexpr void chashmap<Key, T>::clear() {
+    for (auto& bucket : buckets) {
+        bucket = nullptr;
+    }
     inserted_values = 0;
-    return future;
 }
 
 template<Hashable Key, class T>
@@ -289,9 +285,9 @@ std::future<void> chashmap<Key, T>::insert(std::initializer_list<typename chashm
     return std::async(std::launch::async, [&, values=std::move(values)]{
         std::vector<std::future<std::pair<iterator, bool>>> pool;
         for (auto [key, value] : values) {
-            pool.emplace_back(insert(key, value));
+            pool.emplace_back(insert(std::move(key), std::move(value)));
         }
-        for (auto future : pool) {
+        for (auto& future : pool) {
             future.wait();
         }
     });
@@ -394,13 +390,14 @@ constexpr T& chashmap<Key, T>::operator[](const Key& key) {
 template<Hashable Key, class T>
 std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::erase_if(std::predicate<const Key&, const T&> auto fn)
 {
-    return std::async(std::launch::async, [&, fn=std::move(fn)]{
-        size_type count = 0;
-        for (auto iter = begin(); iter != end(); iter++) {
-            if (fn(iter->first, iter->second)) {
-                (*iter.current)->first = true;
-                count++;
-            }
+    return std::async(std::launch::async, [&]{
+        auto p1 = count_if(fn);
+        p1.wait();
+        size_type count = p1.get();
+        for (size_type i = 0; i < count; ++i) {
+            auto p = find_if(fn);
+            p.wait();
+            erase(p.get());
         }
         return count;
     });
@@ -417,8 +414,8 @@ std::future<typename chashmap<Key, T>::size_type> chashmap<Key, T>::count_if(std
 {
     return std::async(std::launch::async, [&, fn=std::move(fn)]{
         size_type count = 0;
-        for (auto iter = cbegin(); iter != cend(); iter++) {
-            if (fn(iter->first, iter->second)) {
+        for (auto [ first, second ] : *this) {
+            if (fn(first, second)) {
                 count++;
             }
         }
@@ -455,7 +452,7 @@ template<Hashable Key, class T>
 std::future<typename chashmap<Key, T>::const_iterator> chashmap<Key, T>::find_if(std::predicate<const Key&, const T&> auto fn) const
 {
     return std::async(std::launch::async, [&, fn=std::move(fn)]{
-        for (auto iter = cbegin(); iter != cend(); iter++) {
+        for (auto iter = begin(); iter != end(); iter++) {
             if (fn(iter->first, iter->second)) {
                 return iter;
             }
@@ -502,6 +499,21 @@ std::future<std::optional<T>> chashmap<Key, T>::compute(Key key, std::invocable<
 template<Hashable Key, class T>
 std::future<std::optional<T>> chashmap<Key, T>::compute(Key key, std::invocable<const T&> auto fn) const {
     return compute(key, [&, key=key, fn=std::move(fn)](Key, T t) { return fn(t); });
+}
+
+template<Hashable Key, class T>
+std::future<T&> chashmap<Key, T>::merge(Key key, T value, std::invocable<const T&, const T&> auto fn ) {
+    return std::async(std::launch::async, [&, key=std::move(key), value=std::move(value), fn=std::move(fn)]{
+        auto p = insert(key, value);
+        p.wait();
+        auto [ iter, inserted ] = p.get();
+        if (inserted) return (*this)[key];
+        // key exists
+        auto [ _, tvalue ] = iter;
+        auto p1 = insert_or_assign(key, fn(value, tvalue));
+        p1.wait();
+        return (*this)[key];
+    });
 }
 
 template<Hashable Key, class T>

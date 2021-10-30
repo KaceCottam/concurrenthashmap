@@ -124,4 +124,25 @@ int main() {
     assert(value.has_value());
     assert(value.value() == 10001);
   }
+  {
+    hashTable.clear();
+    assert(hashTable.size() == 0);
+    auto p2 = hashTable.empty();
+    p2.wait();
+    assert(p2.get() == true);
+  }
+  {
+    assert(hashTable.max_size() > 0);
+  }
+  {
+    auto p = hashTable.insert({ {"hello", 1},
+                                {"world", 2} });
+    p.wait();
+    assert(hashTable.size() == 2);
+  }
+  {
+    auto p = hashTable.count("hello");
+    p.wait();
+    assert(p.get() == 1);
+  }
 }
