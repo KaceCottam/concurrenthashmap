@@ -6,6 +6,10 @@ jobs:
     env:
       CXX: g++-10
     steps:
+      - name: get catch2
+        run: 
+          sudo apt update
+          sudo apt install catch2
       - uses: actions/checkout@v2
       - name: build
         run: make
